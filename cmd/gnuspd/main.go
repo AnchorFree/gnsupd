@@ -11,12 +11,12 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 )
 
 type Config struct {
-	NetworksFile string `required:"true" split_words:"true"`
-	SetName      string `required:"true" split_words:"true"`
+	ConfigDir string `default:"/etc/ipsets" split_words:"true"`
 }
 
 type App struct {
@@ -34,7 +34,26 @@ func NewApp() (*App, error) {
 	if err != nil {
 		log.Fatal("failed to initialize", err)
 	}
+	app.log = log
 	return app, err
+
+}
+
+func ScanSetsDir(dir string) ([]string, error) {
+
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+
+	names := []string{}
+	for _, f := range files {
+		name := f.Name()
+		if strings.HasSuffix(name, ".json") {
+			names = append(names, name[:len(name)-5])
+		}
+	}
+	return names, nil
 
 }
 
@@ -66,13 +85,37 @@ func UpdateGNS(setName string, GNS *v3.GlobalNetworkSet) error {
 
 	GNSInterface := cl.GlobalNetworkSets()
 	ctx := context.TODO()
-	_, err = GNSInterface.Get(ctx, setName, options.GetOptions{})
+	existingGNS, err := GNSInterface.Get(ctx, setName, options.GetOptions{})
 	if err != nil {
 		_, err = GNSInterface.Create(ctx, GNS, options.SetOptions{})
 	} else {
-		_, err = GNSInterface.Update(ctx, GNS, options.SetOptions{})
+		existingGNS.Spec = GNS.Spec
+		_, err = GNSInterface.Update(ctx, existingGNS, options.SetOptions{})
 	}
 	return err
+
+}
+
+func UpdateAllSets(app *App) {
+
+	sets, err := ScanSetsDir(app.config.ConfigDir)
+	if err == nil {
+		for _, set := range sets {
+			GNS, err := CreateGNSFromFile(app.config.ConfigDir+"/"+set+".json", set)
+			if err == nil {
+				err = UpdateGNS(set, GNS)
+				if err != nil {
+					app.log.Error("failed to update GNS "+set+":", err)
+				} else {
+					app.log.Info("updated GNS " + set)
+				}
+			} else {
+				app.log.Error("failed to create GNS from file "+app.config.ConfigDir+"/"+set+".json", err)
+			}
+		}
+	} else {
+		app.log.Error("error scanning GNSUPD_CONFIG_DIR:", err)
+	}
 
 }
 
@@ -87,35 +130,19 @@ func main() {
 	manualTrigger := make(chan bool, 1)
 	quit := make(chan bool, 1)
 
-	updateGNS := func(app *App) {
-
-		doUpdate := func(app *App) {
-
-			GNS, err := CreateGNSFromFile(app.config.NetworksFile, app.config.SetName)
-			if err == nil {
-				err = UpdateGNS(app.config.SetName, GNS)
-				if err != nil {
-					app.log.Error("failed to update GNS", err)
-				} else {
-					app.log.Info("updated GNS")
-				}
-			} else {
-				app.log.Error("failed to create GNS from file", err)
-			}
-		}
-
+	updateOnRequest := func(a *App) {
 		for {
 			select {
 			case <-sigHUP:
-				doUpdate(app)
+				UpdateAllSets(a)
 			case <-manualTrigger:
-				doUpdate(app)
+				UpdateAllSets(a)
 			}
 		}
 	}
 	signal.Notify(sigHUP, syscall.SIGHUP)
 
-	go updateGNS(app)
+	go updateOnRequest(app)
 	manualTrigger <- true
 	_ = <-quit
 
