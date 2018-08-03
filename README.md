@@ -96,6 +96,15 @@ After that GNSUPD will just sit there and wait for a HUP signal. When it receive
 a HUP signal, it rescans the directory, creates/updates GNS resources, and goes
 back to sleep till the next HUP.
 
+### Practical usage
+
+GNSUPD is of no much use on its' own. The main idea behing GNSUPD is that
+you have GNS resource files generated from templates and updated dynamically
+via some other means. For example, you may want to generate GNS resources based
+on information in [consul k/v store](https://consul.io) using [consul-template](https://github.com/hashicorp/consul-template).
+Every time your GNS resource files get regenerated you should send a HUP signal
+to the GNSUPD daemon to get the corresponding GNS resource updated.
+
 ### Configuration
 
 GNSUPD is configured via environment variables:
