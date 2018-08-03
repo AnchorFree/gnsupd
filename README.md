@@ -1,7 +1,7 @@
 GNSUPD -- calico global network set updater.
 ============================================
 
-*** Description
+### Description
 
 Calico has a concept of Global Network Sets. GNS is a 
 a list of CIDR networks, sharing the same labels. Once
@@ -72,7 +72,7 @@ spec:
   - action: Allow
 ```
 
-*** Configuration
+### Configuration
 
 GNSUPD is configured via environment variables:
 
