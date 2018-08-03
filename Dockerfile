@@ -8,11 +8,11 @@ COPY Gopkg.lock /go/src/github.com/anchorfree/gnsupd/
 
 RUN cd /go && go get -u github.com/golang/dep/cmd/dep
 RUN cd /go/src/github.com/anchorfree/gnsupd/ && dep ensure
-RUN cd /go && go build github.com/anchorfree/gnsupd/cmd/gnuspd
+RUN cd /go && go build github.com/anchorfree/gnsupd/cmd/gnsupd
 
 FROM alpine:3.7
 LABEL maintainer="v.zorin@anchorfree.com"
 
-COPY --from=builder /go/gnuspd /usr/local/bin/gnuspd
+COPY --from=builder /go/gnsupd /usr/local/bin/gnsupd
 
-ENTRYPOINT ["/usr/local/bin/gnuspd"]
+ENTRYPOINT ["/usr/local/bin/gnsupd"]
