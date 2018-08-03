@@ -97,6 +97,10 @@ func UpdateGNS(setName string, GNS *v3.GlobalNetworkSet) error {
 	if err != nil {
 		_, err = GNSInterface.Create(ctx, GNS, options.SetOptions{})
 	} else {
+		// When we update an already existing resource almost
+		// all of the fields of GNS.ObjectMeta should be set,
+		// and the easiest way to do that is just to redefine the networks
+		// in the resource we got from the Get request.
 		existingGNS.Spec = GNS.Spec
 		_, err = GNSInterface.Update(ctx, existingGNS, options.SetOptions{})
 	}
