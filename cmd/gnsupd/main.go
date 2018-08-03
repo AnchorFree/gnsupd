@@ -24,6 +24,7 @@ type App struct {
 	log    jsonlog.Logger
 }
 
+// NewApp initializes the logger and parses the configuration.
 func NewApp() (*App, error) {
 
 	log := &jsonlog.StdLogger{}
@@ -39,6 +40,8 @@ func NewApp() (*App, error) {
 
 }
 
+// ScanSetsDir returns a list of all files that have '.json' suffix in a given
+// directory. The names in the returned list are trimmed of the suffix.
 func ScanSetsDir(dir string) ([]string, error) {
 
 	files, err := ioutil.ReadDir(dir)
@@ -57,6 +60,9 @@ func ScanSetsDir(dir string) ([]string, error) {
 
 }
 
+// CreateGNSFromFile returns an initialized v3.GlobalNetworkSet structure where
+// networks are defined from the provided file. The file must contain "nets" JSON
+// array with networks, e.g.: { "nets" : [ "10.100.11.0/24", "192.168.7.0/24" ] }
 func CreateGNSFromFile(filename, setName string) (*v3.GlobalNetworkSet, error) {
 
 	rawJSON, err := ioutil.ReadFile(filename)
@@ -76,6 +82,8 @@ func CreateGNSFromFile(filename, setName string) (*v3.GlobalNetworkSet, error) {
 
 }
 
+// UpdateGNS actually updates (or creates) provided GNS resource via
+// making a request to the kube API.
 func UpdateGNS(setName string, GNS *v3.GlobalNetworkSet) error {
 
 	cl, err := client.NewFromEnv()
@@ -96,6 +104,8 @@ func UpdateGNS(setName string, GNS *v3.GlobalNetworkSet) error {
 
 }
 
+// UpdateAllSets runs UpdateGNS for every file found in the
+// app.config.ConfigDir directory.
 func UpdateAllSets(app *App) {
 
 	sets, err := ScanSetsDir(app.config.ConfigDir)
