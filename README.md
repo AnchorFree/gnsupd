@@ -90,7 +90,9 @@ Each file is supposed to contain `nets` JSON array of networks with CIDR masks:
 
 For every json file found GNSUPD creates (or updates) a GNS resource. In our particular
 example GNSUPD will create two GNS resources with names `first-set` and `second-set`, and assigns
-them labels `first-set=true` and `second-set=true` respectively. 
+them labels `first-set=true` and `second-set=true` respectively. If you have
+configured the extra label, then GNSUPD will also add this extra label to every GNS resource with
+the value `true`. 
 
 After that GNSUPD will just sit there and wait for a HUP signal. When it receives 
 a HUP signal, it rescans the directory, creates/updates GNS resources, and goes
@@ -111,6 +113,9 @@ GNSUPD is configured via environment variables:
 
 * **GNSUPD_CONFIG_DIR**  
 Path to the directory with set files. Defaults to **/etc/ipsets**.
+
+* **GNSUPD_EXTRA_LABEL**  
+The name of an additional label to be applied to every GNS resource created.
 
 * **DATASTORE_TYPE**  
 For talking with calico we need to know which datastore backend calico is using.

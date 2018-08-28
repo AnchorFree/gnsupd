@@ -16,7 +16,8 @@ import (
 )
 
 type Config struct {
-	ConfigDir string `default:"/etc/ipsets" split_words:"true"`
+	ConfigDir  string `default:"/etc/ipsets" split_words:"true"`
+	ExtraLabel string `default:"" split_words:"true"`
 }
 
 type App struct {
@@ -63,7 +64,7 @@ func ScanSetsDir(dir string) ([]string, error) {
 // CreateGNSFromFile returns an initialized v3.GlobalNetworkSet structure where
 // networks are defined from the provided file. The file must contain "nets" JSON
 // array with networks, e.g.: { "nets" : [ "10.100.11.0/24", "192.168.7.0/24" ] }
-func CreateGNSFromFile(filename, setName string) (*v3.GlobalNetworkSet, error) {
+func CreateGNSFromFile(filename, setName, extraLabel string) (*v3.GlobalNetworkSet, error) {
 
 	rawJSON, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -72,6 +73,9 @@ func CreateGNSFromFile(filename, setName string) (*v3.GlobalNetworkSet, error) {
 	GNS := v3.NewGlobalNetworkSet()
 	GNS.ObjectMeta.Name = setName
 	GNS.ObjectMeta.Labels = map[string]string{setName: "true"}
+	if extraLabel != "" {
+		GNS.ObjectMeta.Labels[extraLabel] = "true"
+	}
 	HostList := v3.GlobalNetworkSetSpec{}
 	err = json.Unmarshal(rawJSON, &HostList)
 	if err != nil {
@@ -115,7 +119,7 @@ func UpdateAllSets(app *App) {
 	sets, err := ScanSetsDir(app.config.ConfigDir)
 	if err == nil {
 		for _, set := range sets {
-			GNS, err := CreateGNSFromFile(app.config.ConfigDir+"/"+set+".json", set)
+			GNS, err := CreateGNSFromFile(app.config.ConfigDir+"/"+set+".json", set, app.config.ExtraLabel)
 			if err == nil {
 				err = UpdateGNS(set, GNS)
 				if err != nil {
