@@ -1,6 +1,10 @@
 GNSUPD -- calico Global Network Set UPdater Daemon.
 ===================================================
 
+### Deprecation notice
+
+This project is no longer maintained.
+
 ### Introduction
 
 Calico has a concept of Global Network Sets(GNS). GNS is a 
